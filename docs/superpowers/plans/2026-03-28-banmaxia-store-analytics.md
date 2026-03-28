@@ -91,7 +91,7 @@ banmaxia-store-analytics/
 Run from `~/Code/Personal/banmaxia-store-analytics`:
 
 ```bash
-npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm --no-turbopack
+pnpm create next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm --no-turbopack
 ```
 
 Select defaults when prompted. This creates the full Next.js scaffold.
@@ -99,8 +99,8 @@ Select defaults when prompted. This creates the full Next.js scaffold.
 - [ ] **Step 2: Install additional dependencies**
 
 ```bash
-npm install recharts qrcode
-npm install -D @types/qrcode jest ts-jest @testing-library/react @testing-library/jest-dom @types/jest jest-environment-jsdom
+pnpm install recharts qrcode
+pnpm install -D @types/qrcode jest ts-jest @testing-library/react @testing-library/jest-dom @types/jest jest-environment-jsdom
 ```
 
 - [ ] **Step 3: Configure Jest**
@@ -164,7 +164,7 @@ Create `config.example.json`:
 - [ ] **Step 6: Verify dev server starts**
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Expected: Server starts on `http://localhost:4927`, default Next.js page loads.
@@ -228,7 +228,7 @@ describe("config", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- __tests__/lib/config.test.ts
+pnpm test -- __tests__/lib/config.test.ts
 ```
 
 Expected: FAIL — module `@/lib/config` not found.
@@ -280,7 +280,7 @@ export function writeConfig(
 - [ ] **Step 4: Run config tests**
 
 ```bash
-npm test -- __tests__/lib/config.test.ts
+pnpm test -- __tests__/lib/config.test.ts
 ```
 
 Expected: PASS.
@@ -330,7 +330,7 @@ describe("date-utils", () => {
 - [ ] **Step 6: Run date-utils tests to verify fail**
 
 ```bash
-npm test -- __tests__/lib/date-utils.test.ts
+pnpm test -- __tests__/lib/date-utils.test.ts
 ```
 
 Expected: FAIL — module not found.
@@ -391,7 +391,7 @@ export function buildTimeParam(dateStr: string): YouzanTimeParam {
 - [ ] **Step 8: Run date-utils tests**
 
 ```bash
-npm test -- __tests__/lib/date-utils.test.ts
+pnpm test -- __tests__/lib/date-utils.test.ts
 ```
 
 Expected: PASS.
@@ -571,7 +571,7 @@ describe("YouzanClient", () => {
 - [ ] **Step 3: Run client tests to verify fail**
 
 ```bash
-npm test -- __tests__/services/youzan/client.test.ts
+pnpm test -- __tests__/services/youzan/client.test.ts
 ```
 
 Expected: FAIL — module not found.
@@ -738,7 +738,7 @@ export class YouzanClient {
 - [ ] **Step 5: Run client tests**
 
 ```bash
-npm test -- __tests__/services/youzan/client.test.ts
+pnpm test -- __tests__/services/youzan/client.test.ts
 ```
 
 Expected: PASS.
@@ -1070,7 +1070,7 @@ describe("aggregator", () => {
 - [ ] **Step 2: Run to verify fail**
 
 ```bash
-npm test -- __tests__/services/youzan/aggregator.test.ts
+pnpm test -- __tests__/services/youzan/aggregator.test.ts
 ```
 
 Expected: FAIL — module not found.
@@ -1232,7 +1232,7 @@ export async function fetchCompareReport(date: string): Promise<CompareReport> {
 - [ ] **Step 4: Run aggregator tests**
 
 ```bash
-npm test -- __tests__/services/youzan/aggregator.test.ts
+pnpm test -- __tests__/services/youzan/aggregator.test.ts
 ```
 
 Expected: PASS.
@@ -1326,7 +1326,7 @@ describe("reports", () => {
 - [ ] **Step 2: Run to verify fail**
 
 ```bash
-npm test -- __tests__/lib/reports.test.ts
+pnpm test -- __tests__/lib/reports.test.ts
 ```
 
 Expected: FAIL.
@@ -1438,7 +1438,7 @@ export function listReports(
 - [ ] **Step 4: Run reports tests**
 
 ```bash
-npm test -- __tests__/lib/reports.test.ts
+pnpm test -- __tests__/lib/reports.test.ts
 ```
 
 Expected: PASS.
@@ -2537,7 +2537,7 @@ export default function SettingsPage() {
 - [ ] **Step 6: Verify dev server and pages load**
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Open `http://localhost:4927` — should see the dashboard (will show loading/error without a valid cookie, which is expected).
@@ -2699,7 +2699,7 @@ cp config.example.json config.json
 - [ ] **Step 2: Start the dev server**
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Expected: Server starts on `http://localhost:4927`.
@@ -2743,7 +2743,7 @@ Open `http://localhost:4927` and confirm:
 - [ ] **Step 6: Run all tests**
 
 ```bash
-npm test
+pnpm test
 ```
 
 Expected: All tests pass.
