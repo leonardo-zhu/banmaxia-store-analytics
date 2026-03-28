@@ -44,7 +44,7 @@ next-env.d.ts
 config.json
 
 # AI generated reports
-reports/
+/reports/
 
 # IDE
 .idea/
