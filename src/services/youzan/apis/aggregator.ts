@@ -67,6 +67,7 @@ export function extractComparisonItem(
 function createClient(): YouzanClient {
   const config = readConfig();
   if (!config.cookie) throw new Error("NO_COOKIE");
+  if (!config.csrfToken) throw new Error("NO_CSRF_TOKEN");
   return new YouzanClient(config.cookie, config.csrfToken);
 }
 

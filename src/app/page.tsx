@@ -29,16 +29,16 @@ export default function DashboardPage() {
     setError(null);
     try {
       const res = await fetch("/api/report/compare");
-      if (res.status === 401) {
-        setError("Cookie 或 CSRF Token 已失效，请在 config.json 中手动更新");
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setError(json.error ?? `请求失败（${res.status}）`);
         setLoading(false);
         return;
       }
-      if (!res.ok) throw new Error("Failed to fetch data");
       const json = await res.json();
       setData(json);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
+      setError(e instanceof Error ? e.message : "网络请求失败");
     } finally {
       setLoading(false);
     }

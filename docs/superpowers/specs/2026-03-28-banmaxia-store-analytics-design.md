@@ -175,6 +175,37 @@ src/
 }
 ```
 
+### 认证错误处理
+
+认证失败时，**不能静默返回全零数据**，必须明确报错。错误分三层传递：
+
+#### 1. 服务层错误类型
+
+| 错误 | 触发条件 | 含义 |
+|------|---------|------|
+| `NO_COOKIE` | `config.json` 中 `cookie` 字段为空 | Cookie 未配置 |
+| `NO_CSRF_TOKEN` | `config.json` 中 `csrfToken` 字段为空 | CSRF Token 未配置 |
+| `COOKIE_EXPIRED` | 有赞 API 返回 302 重定向 | 登录态已过期 |
+| `YOUZAN_API_ERROR:<code>:<msg>` | 有赞 API 返回 `code !== 0` | 认证失效或权限错误（有赞不一定用302，也可能返回200+错误码） |
+
+> **关键问题**：有赞在 CSRF Token 失效时往往不返回 302，而是返回 HTTP 200 + `{"code": 1, "data": null}`，客户端必须检测 `code !== 0` 并抛错，否则会静默返回全零数据。
+
+#### 2. API 路由层 HTTP 响应
+
+| 服务层错误 | HTTP 状态码 | 响应体 |
+|-----------|-----------|--------|
+| `NO_COOKIE` | 401 | `{"error": "Cookie 未配置，请在 config.json 中填写"}` |
+| `NO_CSRF_TOKEN` | 401 | `{"error": "CSRF Token 未配置，请在 config.json 中填写"}` |
+| `COOKIE_EXPIRED` | 401 | `{"error": "登录已过期，请重新复制 Cookie 和 CSRF Token"}` |
+| `YOUZAN_API_ERROR` | 401 | `{"error": "有赞认证失败（<code>: <msg>）"}` |
+| 其他异常 | 500 | `{"error": "<message>"}` |
+
+#### 3. 前端展示
+
+- 收到 401 或 500 → 显示红色错误横幅，提示用户更新 `config.json`
+- **不显示全零数据**（数据为空且有错误时，隐藏数据区域，只显示错误）
+- 错误横幅文案：`"Cookie 或 CSRF Token 已失效，请在 config.json 中手动更新"`
+
 ## 模块三：API 接口层
 
 供 Claude Code、OpenClaw 及其他 Agent 调用的本地 API。
