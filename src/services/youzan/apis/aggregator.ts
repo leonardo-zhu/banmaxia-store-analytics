@@ -10,30 +10,46 @@ import {
   getLastMonthSameDay,
 } from "@/lib/date-utils";
 
-// Convert Youzan cent values to yuan
-function toYuan(cents: number): number {
-  return Math.round(cents) / 100;
+// Convert Youzan cent values to yuan, treating nullish as 0
+function toYuan(cents: number | undefined | null): number {
+  return Math.round(cents ?? 0) / 100;
 }
 
+function num(v: number | undefined | null): number {
+  return v ?? 0;
+}
+
+const EMPTY_BREAKDOWN = {
+  member: { amount: 0, percentage: 0 },
+  nonMember: { amount: 0, percentage: 0 },
+  passerby: { amount: 0, percentage: 0 },
+} as const;
+
 export function extractIncomeData(result: Record<string, unknown>): DailyReport["income"] {
-  const m = result.allIncomeIndexModel as Record<string, number>;
+  const model = result?.allIncomeIndexModel as Record<string, number> | undefined;
+  if (!model) {
+    return {
+      payAmount: 0, revenue: 0, refundAmount: 0,
+      payCustomerCount: 0, payOrderCount: 0,
+      avgOrderAmount: 0, avgTransactionAmount: 0, avgItemPrice: 0,
+      jointRate: 0, refundCustomerCount: 0, refundOrderCount: 0,
+      customerBreakdown: { ...EMPTY_BREAKDOWN },
+    };
+  }
+
   return {
-    payAmount: toYuan(m.payAmount),
-    revenue: toYuan(m.tradeAmount),
-    refundAmount: toYuan(m.refundAmount),
-    payCustomerCount: m.payUvOfPeriod,
-    payOrderCount: m.payCount,
-    avgOrderAmount: toYuan(m.amountPerUser),
-    avgTransactionAmount: toYuan(m.amountPerCount),
-    avgItemPrice: toYuan(m.amountPerGoods),
-    jointRate: m.jointRate,
-    refundCustomerCount: m.refundUvOfPeriod,
-    refundOrderCount: m.refundCount,
-    customerBreakdown: {
-      member: { amount: 0, percentage: 0 },
-      nonMember: { amount: 0, percentage: 0 },
-      passerby: { amount: 0, percentage: 0 },
-    },
+    payAmount: toYuan(model.payAmount),
+    revenue: toYuan(model.tradeAmount),
+    refundAmount: toYuan(model.refundAmount),
+    payCustomerCount: num(model.payUvOfPeriod),
+    payOrderCount: num(model.payCount),
+    avgOrderAmount: toYuan(model.amountPerUser),
+    avgTransactionAmount: toYuan(model.amountPerCount),
+    avgItemPrice: toYuan(model.amountPerGoods),
+    jointRate: num(model.jointRate),
+    refundCustomerCount: num(model.refundUvOfPeriod),
+    refundOrderCount: num(model.refundCount),
+    customerBreakdown: { ...EMPTY_BREAKDOWN },
   };
 }
 

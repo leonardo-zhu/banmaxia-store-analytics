@@ -27,6 +27,21 @@ describe("aggregator", () => {
     expect(result.jointRate).toBe(1.7);
   });
 
+  test("extractIncomeData returns zeros when allIncomeIndexModel is missing", () => {
+    const result = extractIncomeData({});
+    expect(result.payAmount).toBe(0);
+    expect(result.revenue).toBe(0);
+    expect(result.payCustomerCount).toBe(0);
+    expect(result.jointRate).toBe(0);
+    expect(result.customerBreakdown.member.amount).toBe(0);
+  });
+
+  test("extractIncomeData returns zeros when result is null-like", () => {
+    const result = extractIncomeData({ allIncomeIndexModel: undefined } as Record<string, unknown>);
+    expect(result.payAmount).toBe(0);
+    expect(result.payOrderCount).toBe(0);
+  });
+
   test("extractComparisonItem creates correct comparison", () => {
     const result = extractComparisonItem(1370.14, 875.10);
     expect(result.value).toBe(875.10);
