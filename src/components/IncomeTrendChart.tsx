@@ -22,7 +22,7 @@ export default function IncomeTrendChart({ data }: IncomeTrendChartProps) {
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" tick={{ fontSize: 12 }} />
           <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip formatter={(value: number) => `¥${value.toFixed(2)}`} />
+          <Tooltip formatter={(value) => `¥${Number(value).toFixed(2)}`} />
           <Line
             type="monotone"
             dataKey="payAmount"

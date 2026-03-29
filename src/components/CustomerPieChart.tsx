@@ -1,6 +1,6 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, type PieLabelRenderProps } from "recharts";
 
 interface CustomerPieChartProps {
   member: { amount: number; percentage: number };
@@ -39,13 +39,13 @@ export default function CustomerPieChart({
             innerRadius={50}
             outerRadius={80}
             dataKey="value"
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            label={(props: PieLabelRenderProps) => `${props.name ?? ""} ${((props.percent ?? 0) * 100).toFixed(0)}%`}
           >
             {data.map((_, index) => (
               <Cell key={index} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip formatter={(value: number) => `¥${value.toFixed(2)}`} />
+          <Tooltip formatter={(value) => `¥${Number(value).toFixed(2)}`} />
         </PieChart>
       </ResponsiveContainer>
     </div>
