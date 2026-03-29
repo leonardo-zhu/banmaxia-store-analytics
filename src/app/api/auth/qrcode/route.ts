@@ -17,7 +17,7 @@ export async function POST() {
     activeSession = { token, csrfToken, cookies, createdAt: Date.now() };
 
     // QR code URL for Youzan WeChat scan
-    const qrUrl = `https://account.youzan.com/qr/login?token=${token}`;
+    const qrUrl = `http://passport.youzan.com/scan-login?token=${token}&fromSource=SOURCE_PC`;
 
     return NextResponse.json({ token, qrUrl });
   } catch (e) {

@@ -144,7 +144,7 @@ src/
 
 1. **获取 Token**：`GET /api/login/qrcode-data.json?csrf_token=...`
    - 返回 `{ "data": { "token": "YZ..." } }`
-   - 二维码内容基于此 token 生成
+   - 二维码内容：`http://passport.youzan.com/scan-login?token=YZ...&fromSource=SOURCE_PC`
 
 2. **轮询扫码状态**：`POST /api/login/check-qrcode-is-login.json`
    - 请求体：`token=YZ...&csrf_token=...`
@@ -171,9 +171,10 @@ src/
 
 ### 扫码登录域名
 
-注意：扫码登录相关接口在 `account.youzan.com` 域名下，而非 `crm.youzan.com`：
+注意：扫码登录相关接口在 `account.youzan.com` 域名下，但**二维码跳转地址**在 `passport.youzan.com`：
 - 获取 Token：`https://account.youzan.com/api/login/qrcode-data.json`
 - 轮询状态：`https://account.youzan.com/api/login/check-qrcode-is-login.json`
+- 二维码内容：`http://passport.youzan.com/scan-login?token={token}&fromSource=SOURCE_PC`
 - csrf_token 需从登录页面获取
 
 ### 配置文件
