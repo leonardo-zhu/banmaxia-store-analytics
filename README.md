@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 斑马侠散酒铺 - 门店数据分析系统
 
-## Getting Started
+为「斑马侠散酒铺」（合肥肥东吾悦广场店）构建的本地门店数据分析系统。对接有赞 CRM 数据中心，提供实时数据查看、AI 分析报告生成与存储。
 
-First, run the development server:
+## 技术栈
+
+- **框架**: Next.js 16 + React 19 + TypeScript
+- **UI**: Tailwind CSS v4 + Recharts
+- **测试**: Jest + React Testing Library
+- **包管理**: pnpm
+
+## 快速开始
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 安装依赖
+pnpm install
+
+# 配置有赞登录凭证
+cp config.example.json config.json
+# 编辑 config.json，填入 cookie 和 csrfToken
+
+# 启动开发服务器
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+访问 http://localhost:4927
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 配置
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+在 `config.json` 中手动维护有赞登录凭证：
 
-## Learn More
+```json
+{
+  "cookie": "从浏览器复制的完整 Cookie",
+  "csrfToken": "从页面提取的 CSRF Token",
+  "cookieUpdatedAt": "2026-03-29T22:00:00+08:00",
+  "port": 4927,
+  "storeName": "斑马侠散酒铺",
+  "storeFullName": "斑马侠合肥肥东吾悦广场店"
+}
+```
 
-To learn more about Next.js, take a look at the following resources:
+Cookie 和 csrfToken 过期后需手动登录有赞后台更新。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 页面
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| 路由 | 功能 |
+|------|------|
+| `/` | 今日数据概览（指标卡片、客户饼图、7日趋势、最新报告） |
+| `/history` | 历史数据查看（日期选择） |
+| `/reports` | AI 分析报告列表 |
+| `/reports/:id` | 报告详情 |
+| `/settings` | 登录状态检查、系统信息 |
 
-## Deploy on Vercel
+## API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| 路由 | 方法 | 用途 |
+|------|------|------|
+| `/api/report/daily?date=YYYY-MM-DD` | GET | 单日结构化数据 |
+| `/api/report/compare?date=YYYY-MM-DD` | GET | 带日环比/周同比/月同比的对比数据 + 7日趋势 |
+| `/api/report/analyze` | POST | 触发分析并保存报告 |
+| `/api/auth/status` | GET | Cookie 有效性检查 |
+| `/api/reports` | GET/POST | 报告列表 / 保存报告 |
+| `/api/reports/:id` | GET | 单份报告详情 |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 有赞数据源
+
+对接 24 个有赞 CRM API，覆盖：
+
+- **收入分析**（7 个）: 概况、客户构成、趋势、渠道明细
+- **拉新分析**（4 个）: 概况、趋势、渠道分布
+- **复购分析**（3 个）: 概况、频次分布、周期分析
+- **客户画像**（7 个）: 性别/年龄/地域/活跃度分布
+- **新老会员**（2 个）: 趋势、明细
+- **RFM 模型**（1 个）: 客户价值分层
+
+## Agent Skill
+
+提供 `banmaxia-store-analytics` Skill 供 AI Agent 使用：
+
+```bash
+# Agent 工作流
+curl http://localhost:4927/api/auth/status          # 1. 检查登录
+curl http://localhost:4927/api/report/compare        # 2. 获取数据
+# 3. AI 分析生成报告
+curl -X POST http://localhost:4927/api/reports ...   # 4. 保存报告
+```
+
+## 开发
+
+```bash
+pnpm test          # 运行测试
+pnpm test:watch    # 监听模式
+pnpm build         # 生产构建
+pnpm start         # 启动生产服务
+pnpm lint          # 代码检查
+```
+
+## 项目结构
+
+```
+src/
+  app/                    Next.js App Router (页面 + API 路由)
+  components/             React 组件 (StatsGrid, Charts, ReportCard...)
+  services/youzan/        有赞 API 服务层
+    client.ts             HTTP 客户端
+    auth.ts               认证状态检查
+    types.ts              TypeScript 类型定义
+    apis/                 各业务模块 API (income, acquisition, repurchase...)
+  lib/                    工具库 (config, date-utils, reports)
+reports/                  AI 分析报告存储 (Markdown + frontmatter)
+```
