@@ -5,7 +5,17 @@ import StatsGrid from "@/components/StatsGrid";
 import CustomerPieChart from "@/components/CustomerPieChart";
 import IncomeTrendChart from "@/components/IncomeTrendChart";
 import QRCodeModal from "@/components/QRCodeModal";
+import ReportCard from "@/components/ReportCard";
 import type { CompareReport } from "@/services/youzan/types";
+
+interface ReportSummary {
+  id: string;
+  date: string;
+  source: string;
+  title: string;
+  contentPreview: string;
+  createdAt: string;
+}
 
 export default function DashboardPage() {
   const [data, setData] = useState<CompareReport | null>(null);
@@ -14,6 +24,7 @@ export default function DashboardPage() {
   const [showQR, setShowQR] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
+  const [latestReport, setLatestReport] = useState<ReportSummary | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -35,9 +46,21 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchLatestReport = useCallback(async () => {
+    try {
+      const res = await fetch("/api/reports");
+      if (!res.ok) return;
+      const reports: ReportSummary[] = await res.json();
+      if (reports.length > 0) setLatestReport(reports[0]);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    fetchLatestReport();
+  }, [fetchData, fetchLatestReport]);
 
   if (loading) {
     return (
@@ -73,6 +96,7 @@ export default function DashboardPage() {
                 const json = await res.json();
                 if (json.success) {
                   setAnalyzeResult(json.content);
+                  fetchLatestReport();
                 } else {
                   setAnalyzeResult(`分析失败: ${json.error}`);
                 }
@@ -105,7 +129,7 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CustomerPieChart {...data.current.income.customerBreakdown} />
-            <IncomeTrendChart data={[]} />
+            <IncomeTrendChart data={data.incomeTrend || []} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -128,6 +152,13 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {latestReport && (
+            <div>
+              <h2 className="text-sm font-medium text-gray-700 mb-3">最新 AI 分析报告</h2>
+              <ReportCard {...latestReport} />
+            </div>
+          )}
 
           {analyzeResult && (
             <div className="bg-white rounded-lg border border-gray-200 p-6">

@@ -68,6 +68,11 @@ export interface ComparisonItem {
   direction: "up" | "down" | "flat";
 }
 
+export interface TrendDataPoint {
+  date: string;
+  payAmount: number;
+}
+
 export interface CompareReport {
   date: string;
   current: DailyReport;
@@ -76,6 +81,7 @@ export interface CompareReport {
     weekOverWeek: Record<string, ComparisonItem>;
     monthOverMonth: Record<string, ComparisonItem>;
   };
+  incomeTrend: TrendDataPoint[];
 }
 
 export interface StoredReport {

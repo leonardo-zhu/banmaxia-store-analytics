@@ -2,12 +2,13 @@ import { YouzanClient } from "../client";
 import { IncomeAPI } from "./income";
 import { AcquisitionAPI } from "./acquisition";
 import { RepurchaseAPI } from "./repurchase";
-import type { DailyReport, ComparisonItem, CompareReport } from "../types";
+import type { DailyReport, ComparisonItem, CompareReport, TrendDataPoint } from "../types";
 import { readConfig } from "@/lib/config";
 import {
   getYesterday,
   getLastWeekSameDay,
   getLastMonthSameDay,
+  getDaysAgo,
 } from "@/lib/date-utils";
 
 // Convert Youzan cent values to yuan, treating nullish as 0
@@ -76,12 +77,15 @@ export async function fetchDailyReport(date: string): Promise<DailyReport> {
   const acquisitionAPI = new AcquisitionAPI(client);
   const repurchaseAPI = new RepurchaseAPI(client);
 
-  const [incomeTreeRes, customerPieRes, acquisitionRes, repurchaseRes] =
+  const [incomeTreeRes, customerPieRes, acquisitionRes, repurchaseRes, channelRes, frequencyRes, cycleRes] =
     await Promise.all([
       incomeAPI.getMemberIncomeTree(date),
       incomeAPI.fetchCustomerPie(date),
       acquisitionAPI.getOverview(date),
       repurchaseAPI.getGeneralView(date),
+      acquisitionAPI.getChannelAndWayAnalysis(date),
+      repurchaseAPI.getFrequencyAnalysis(date),
+      repurchaseAPI.getCycleAnalysis(date),
     ]);
 
   // Extract income
@@ -106,17 +110,44 @@ export async function fetchDailyReport(date: string): Promise<DailyReport> {
 
   // Extract acquisition
   const acqResult = acquisitionRes.data as Record<string, unknown>;
+  const channelDistribution: Record<string, number> = {};
+  const channelData = channelRes.data as Record<string, unknown>;
+  if (channelData?.list) {
+    for (const item of channelData.list as Array<Record<string, unknown>>) {
+      const name = (item.channelName || item.wayName || item.name) as string;
+      const count = (item.newMemberCount || item.count || item.value || 0) as number;
+      if (name) channelDistribution[name] = count;
+    }
+  }
   const acquisition: DailyReport["acquisition"] = {
     newMemberCount: (acqResult?.newMemberCount as number) || 0,
-    channelDistribution: {},
+    channelDistribution,
   };
 
   // Extract repurchase
   const repResult = repurchaseRes.data as Record<string, unknown>;
+  const frequencyDistribution: Record<string, number> = {};
+  const freqData = frequencyRes.data as Record<string, unknown>;
+  if (freqData?.list) {
+    for (const item of freqData.list as Array<Record<string, unknown>>) {
+      const label = (item.frequency || item.name || item.label) as string;
+      const count = (item.customerCount || item.count || item.value || 0) as number;
+      if (label) frequencyDistribution[label] = count;
+    }
+  }
+  const cycleAnalysisData: Record<string, number> = {};
+  const cycData = cycleRes.data as Record<string, unknown>;
+  if (cycData?.list) {
+    for (const item of cycData.list as Array<Record<string, unknown>>) {
+      const label = (item.cycle || item.name || item.label) as string;
+      const count = (item.customerCount || item.count || item.value || 0) as number;
+      if (label) cycleAnalysisData[label] = count;
+    }
+  }
   const repurchase: DailyReport["repurchase"] = {
     repurchaseRate: (repResult?.repurchaseRate as number) || 0,
-    frequencyDistribution: {},
-    cycleAnalysis: {},
+    frequencyDistribution,
+    cycleAnalysis: cycleAnalysisData,
   };
 
   return {
@@ -128,12 +159,27 @@ export async function fetchDailyReport(date: string): Promise<DailyReport> {
   };
 }
 
+function extractIncomeTrend(data: unknown): TrendDataPoint[] {
+  const result = data as Record<string, unknown>;
+  const list = result?.list as Array<Record<string, unknown>> | undefined;
+  if (!list) return [];
+  return list.map((item) => ({
+    date: (item.date || item.day || "") as string,
+    payAmount: toYuan((item.payAmount as number) ?? 0),
+  })).filter((p) => p.date);
+}
+
 export async function fetchCompareReport(date: string): Promise<CompareReport> {
-  const [current, yesterday, lastWeek, lastMonth] = await Promise.all([
+  const client = createClient();
+  const incomeAPI = new IncomeAPI(client);
+  const trendStartDate = getDaysAgo(date, 6);
+
+  const [current, yesterday, lastWeek, lastMonth, trendRes] = await Promise.all([
     fetchDailyReport(date),
     fetchDailyReport(getYesterday(date)),
     fetchDailyReport(getLastWeekSameDay(date)),
     fetchDailyReport(getLastMonthSameDay(date)),
+    incomeAPI.getIncomeTrendRange(trendStartDate, date),
   ]);
 
   const fields = [
@@ -151,6 +197,8 @@ export async function fetchCompareReport(date: string): Promise<CompareReport> {
     return result;
   }
 
+  const incomeTrend = extractIncomeTrend(trendRes.data);
+
   return {
     date,
     current,
@@ -159,5 +207,6 @@ export async function fetchCompareReport(date: string): Promise<CompareReport> {
       weekOverWeek: buildComparison(lastWeek),
       monthOverMonth: buildComparison(lastMonth),
     },
+    incomeTrend,
   };
 }

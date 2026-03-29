@@ -1,6 +1,6 @@
 import { YouzanClient } from "../client";
 import type { YouzanResponse } from "../types";
-import { buildTimeParam } from "@/lib/date-utils";
+import { buildTimeParam, buildTimeRangeParam } from "@/lib/date-utils";
 
 export class IncomeAPI {
   constructor(private client: YouzanClient) {}
@@ -30,6 +30,13 @@ export class IncomeAPI {
     return this.client.post<unknown>(
       "/crm/statcenter/income-analyse/api/getIncomeTrend?",
       buildTimeParam(date)
+    );
+  }
+
+  async getIncomeTrendRange(startDate: string, endDate: string) {
+    return this.client.post<unknown>(
+      "/crm/statcenter/income-analyse/api/getIncomeTrend?",
+      buildTimeRangeParam(startDate, endDate)
     );
   }
 

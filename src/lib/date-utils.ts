@@ -44,3 +44,16 @@ export function buildTimeParam(dateStr: string): YouzanTimeParam {
     selectCustomerType: "member",
   };
 }
+
+export function buildTimeRangeParam(startDate: string, endDate: string): YouzanTimeParam {
+  return {
+    dateType: 1,
+    timeParam: { startDay: startDate, endDay: endDate },
+    kdtIds: null,
+    selectCustomerType: "member",
+  };
+}
+
+export function getDaysAgo(dateStr: string, days: number): string {
+  return shiftDays(dateStr, -days);
+}
