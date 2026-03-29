@@ -6,7 +6,7 @@ describe("aggregator", () => {
       allIncomeIndexModel: {
         payAmount: 137014,
         payCount: 38,
-        payUvOfPeriod: 33,
+        payUv: 33,
         amountPerUser: 4152,
         amountPerCount: 3606,
         amountPerGoods: 2447,

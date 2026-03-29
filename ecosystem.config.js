@@ -11,6 +11,7 @@ module.exports = {
       restart_delay: 5000,
       env: {
         NODE_ENV: "production",
+        OPENCLAW_GATEWAY_TOKEN: process.env.OPENCLAW_GATEWAY_TOKEN || "",
       },
     },
   ],

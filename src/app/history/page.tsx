@@ -5,10 +5,10 @@ import DatePicker from "@/components/DatePicker";
 import StatsGrid from "@/components/StatsGrid";
 import CustomerPieChart from "@/components/CustomerPieChart";
 import type { CompareReport } from "@/services/youzan/types";
-import { formatDate } from "@/lib/date-utils";
+import { formatDate, getYesterday } from "@/lib/date-utils";
 
 export default function HistoryPage() {
-  const [date, setDate] = useState(formatDate(new Date()));
+  const [date, setDate] = useState(getYesterday(formatDate(new Date())));
   const [data, setData] = useState<CompareReport | null>(null);
   const [loading, setLoading] = useState(false);
 

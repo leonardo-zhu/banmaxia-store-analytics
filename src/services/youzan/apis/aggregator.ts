@@ -77,10 +77,9 @@ export async function fetchDailyReport(date: string): Promise<DailyReport> {
   const acquisitionAPI = new AcquisitionAPI(client);
   const repurchaseAPI = new RepurchaseAPI(client);
 
-  const [incomeTreeRes, customerPieRes, acquisitionRes, repurchaseRes, channelRes, frequencyRes, cycleRes] =
+  const [incomeTreeRes, acquisitionRes, repurchaseRes, channelRes, frequencyRes, cycleRes] =
     await Promise.all([
       incomeAPI.getMemberIncomeTree(date),
-      incomeAPI.fetchCustomerPie(date),
       acquisitionAPI.getOverview(date),
       repurchaseAPI.getGeneralView(date),
       acquisitionAPI.getChannelAndWayAnalysis(date),
@@ -92,20 +91,23 @@ export async function fetchDailyReport(date: string): Promise<DailyReport> {
   const incomeResult = (incomeTreeRes.data as Record<string, unknown>)?.result as Record<string, unknown>;
   const income = extractIncomeData(incomeResult || {});
 
-  // Extract customer breakdown from pie data
-  const pieResult = customerPieRes.data as Record<string, unknown[]>;
-  if (pieResult?.list) {
-    for (const item of pieResult.list as Array<{ name: string; payAmount: number; payAmountRate: number }>) {
-      const amount = toYuan(item.payAmount);
-      const percentage = Math.round(item.payAmountRate * 10000) / 100;
-      if (item.name === "会员") {
-        income.customerBreakdown.member = { amount, percentage };
-      } else if (item.name === "非会员") {
-        income.customerBreakdown.nonMember = { amount, percentage };
-      } else if (item.name === "流水客") {
-        income.customerBreakdown.passerby = { amount, percentage };
-      }
-    }
+  // Extract customer breakdown from getMemberIncomeTree result
+  // memberIncomeIndexModel = 会员, notMemberIncomeIndexModel = 非会员, noneIncomeIndexModel = 流水客
+  if (incomeResult) {
+    const total = income.payAmount || 1;
+    const memberModel = incomeResult.memberIncomeIndexModel as Record<string, number> | undefined;
+    const nonMemberModel = incomeResult.notMemberIncomeIndexModel as Record<string, number> | undefined;
+    const passerbyModel = incomeResult.noneIncomeIndexModel as Record<string, number> | undefined;
+
+    const memberAmount = toYuan(memberModel?.tradeAmount);
+    const nonMemberAmount = toYuan(nonMemberModel?.tradeAmount);
+    const passerbyAmount = toYuan(passerbyModel?.tradeAmount);
+
+    income.customerBreakdown = {
+      member: { amount: memberAmount, percentage: Math.round(memberAmount / total * 10000) / 100 },
+      nonMember: { amount: nonMemberAmount, percentage: Math.round(nonMemberAmount / total * 10000) / 100 },
+      passerby: { amount: passerbyAmount, percentage: Math.round(passerbyAmount / total * 10000) / 100 },
+    };
   }
 
   // Extract acquisition
