@@ -23,6 +23,12 @@ export class YouzanClient {
     };
   }
 
+  private checkAuth<T>(json: YouzanResponse<T>): YouzanResponse<T> {
+    // code 10100: "页面已过期，请重新刷新页面再提交" — CSRF token expired
+    if (json.code === 10100) throw new Error("COOKIE_EXPIRED");
+    return json;
+  }
+
   async post<T>(path: string, body: object): Promise<YouzanResponse<T>> {
     const url = `${BASE_URL}${path}`;
     const res = await fetch(url, {
@@ -31,13 +37,9 @@ export class YouzanClient {
       body: JSON.stringify(body),
       redirect: "manual",
     });
-    if (res.status === 302 || res.status === 301) {
-      throw new Error("COOKIE_EXPIRED");
-    }
-    if (!res.ok) {
-      throw new Error(`Youzan API error: ${res.status} ${res.statusText}`);
-    }
-    return res.json();
+    if (res.status === 302 || res.status === 301) throw new Error("COOKIE_EXPIRED");
+    if (!res.ok) throw new Error(`Youzan API error: ${res.status} ${res.statusText}`);
+    return this.checkAuth(await res.json());
   }
 
   async get<T>(path: string, params?: Record<string, string>): Promise<YouzanResponse<T>> {
@@ -50,13 +52,9 @@ export class YouzanClient {
       headers: this.buildHeaders(),
       redirect: "manual",
     });
-    if (res.status === 302 || res.status === 301) {
-      throw new Error("COOKIE_EXPIRED");
-    }
-    if (!res.ok) {
-      throw new Error(`Youzan API error: ${res.status} ${res.statusText}`);
-    }
-    return res.json();
+    if (res.status === 302 || res.status === 301) throw new Error("COOKIE_EXPIRED");
+    if (!res.ok) throw new Error(`Youzan API error: ${res.status} ${res.statusText}`);
+    return this.checkAuth(await res.json());
   }
 
   async checkCookieValid(): Promise<boolean> {

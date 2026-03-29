@@ -185,9 +185,9 @@ src/
 |------|---------|------|
 | `NO_COOKIE` | `config.json` 中 `cookie` 字段为空 | Cookie 未配置 |
 | `NO_CSRF_TOKEN` | `config.json` 中 `csrfToken` 字段为空 | CSRF Token 未配置 |
-| `COOKIE_EXPIRED` | 有赞 API 返回 302 重定向 | 登录态已过期 |
+| `COOKIE_EXPIRED` | 有赞 API 返回 302 重定向，或响应体 `code === 10100` | 登录态已过期 |
 
-> **注意**：有赞 CRM 数据接口的 `code` 字段没有统一语义，**不能**用 `code !== 0` 来判断认证失败。只有 `/v2/dashboard/api/checkLocalLifeAbility.json` 才以 `code=0` 表示有效。若 CSRF Token 失效但仍返回 HTTP 200，数据字段可能为 null，前端会展示全零数据（当前已知限制，无法在不调用健康检查接口的情况下可靠区分）。
+> **有赞认证失效的实际响应**：CSRF Token 过期时，有赞数据接口返回 HTTP 200 + `{"code": 10100, "msg": "页面已过期，请重新刷新页面再提交"}`，而不是 302。`client.ts` 的 `checkAuth()` 方法专门检测 `code === 10100` 并抛出 `COOKIE_EXPIRED`。其他非零 code 不视为认证错误（有赞数据接口的 code 字段无统一语义）。
 
 #### 2. API 路由层 HTTP 响应
 
