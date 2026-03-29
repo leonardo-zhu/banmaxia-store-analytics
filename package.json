@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev -p 4927",
     "build": "next build",
+    "start:prod": "pm2 reload banmaxia-store-analytics || pm2 start ecosystem.config.js",
+    "deploy": "pnpm build && pnpm start:prod",
     "start": "next start -p 4927",
     "lint": "eslint",
     "test": "jest",
