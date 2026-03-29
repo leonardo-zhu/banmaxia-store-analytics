@@ -20,7 +20,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<CompareReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzing, setAnalyzing] = useState<"manual" | "openclaw" | null>(null);
   const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
   const [latestReport, setLatestReport] = useState<ReportSummary | null>(null);
 
@@ -84,7 +84,7 @@ export default function DashboardPage() {
           </button>
           <button
             onClick={async () => {
-              setAnalyzing(true);
+              setAnalyzing("manual");
               setAnalyzeResult(null);
               try {
                 const res = await fetch("/api/report/analyze", { method: "POST" });
@@ -102,13 +102,37 @@ export default function DashboardPage() {
               } catch {
                 setAnalyzeResult("分析请求失败");
               } finally {
-                setAnalyzing(false);
+                setAnalyzing(null);
               }
             }}
-            disabled={analyzing}
+            disabled={analyzing !== null}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-50"
           >
-            {analyzing ? "分析中..." : "手动分析"}
+            {analyzing === "manual" ? "分析中..." : "手动分析"}
+          </button>
+          <button
+            onClick={async () => {
+              setAnalyzing("openclaw");
+              setAnalyzeResult(null);
+              try {
+                const res = await fetch("/api/report/analyze/openclaw", { method: "POST" });
+                const json = await res.json();
+                if (json.success) {
+                  setAnalyzeResult(json.content || "OpenClaw 分析完成，报告已保存。");
+                  fetchLatestReport();
+                } else {
+                  setAnalyzeResult(`OpenClaw 分析失败: ${json.error}`);
+                }
+              } catch {
+                setAnalyzeResult("OpenClaw 请求失败");
+              } finally {
+                setAnalyzing(null);
+              }
+            }}
+            disabled={analyzing !== null}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm disabled:opacity-50"
+          >
+            {analyzing === "openclaw" ? "分析中..." : "OpenClaw 分析"}
           </button>
         </div>
       </div>

@@ -42,7 +42,7 @@ export function extractIncomeData(result: Record<string, unknown>): DailyReport[
     payAmount: toYuan(model.payAmount),
     revenue: toYuan(model.tradeAmount),
     refundAmount: toYuan(model.refundAmount),
-    payCustomerCount: num(model.payUvOfPeriod),
+    payCustomerCount: num(model.payUv),
     payOrderCount: num(model.payCount),
     avgOrderAmount: toYuan(model.amountPerUser),
     avgTransactionAmount: toYuan(model.amountPerCount),
