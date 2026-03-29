@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import QRCodeModal from "@/components/QRCodeModal";
 
 interface AuthStatus {
   valid: boolean;
@@ -11,7 +10,6 @@ interface AuthStatus {
 
 export default function SettingsPage() {
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
-  const [showQR, setShowQR] = useState(false);
 
   const checkAuth = useCallback(async () => {
     const res = await fetch("/api/auth/status");
@@ -24,8 +22,6 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <QRCodeModal open={showQR} onSuccess={() => { setShowQR(false); checkAuth(); }} />
-
       <h1 className="text-2xl font-bold text-gray-900 mb-6">设置</h1>
 
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
@@ -47,13 +43,19 @@ export default function SettingsPage() {
             )}
 
             {!authStatus.valid && (
-              <button
-                onClick={() => setShowQR(true)}
-                className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm"
-              >
-                扫码更新 Cookie
-              </button>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <p className="text-sm text-yellow-800">
+                  请手动登录有赞后台，将 Cookie 和 CSRF Token 更新到 config.json 文件中。
+                </p>
+              </div>
             )}
+
+            <button
+              onClick={checkAuth}
+              className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm"
+            >
+              重新检查
+            </button>
           </div>
         )}
       </div>

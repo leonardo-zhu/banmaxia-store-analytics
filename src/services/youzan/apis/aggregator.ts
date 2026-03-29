@@ -67,7 +67,7 @@ export function extractComparisonItem(
 function createClient(): YouzanClient {
   const config = readConfig();
   if (!config.cookie) throw new Error("NO_COOKIE");
-  return new YouzanClient(config.cookie);
+  return new YouzanClient(config.cookie, config.csrfToken);
 }
 
 export async function fetchDailyReport(date: string): Promise<DailyReport> {

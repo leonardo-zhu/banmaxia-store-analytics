@@ -23,6 +23,7 @@ describe("config", () => {
   test("writeConfig then readConfig round-trips", () => {
     const config: AppConfig = {
       cookie: "test_cookie_abc",
+      csrfToken: "test_csrf_token",
       cookieUpdatedAt: "2026-03-28T22:00:00+08:00",
       port: 4927,
       storeName: "斑马侠散酒铺",

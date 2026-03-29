@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import StatsGrid from "@/components/StatsGrid";
 import CustomerPieChart from "@/components/CustomerPieChart";
 import IncomeTrendChart from "@/components/IncomeTrendChart";
-import QRCodeModal from "@/components/QRCodeModal";
 import ReportCard from "@/components/ReportCard";
 import type { CompareReport } from "@/services/youzan/types";
 
@@ -21,7 +20,6 @@ export default function DashboardPage() {
   const [data, setData] = useState<CompareReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showQR, setShowQR] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
   const [latestReport, setLatestReport] = useState<ReportSummary | null>(null);
@@ -32,7 +30,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/report/compare");
       if (res.status === 401) {
-        setShowQR(true);
+        setError("Cookie 或 CSRF Token 已失效，请在 config.json 中手动更新");
         setLoading(false);
         return;
       }
@@ -72,8 +70,6 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <QRCodeModal open={showQR} onSuccess={() => { setShowQR(false); fetchData(); }} />
-
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           今日数据概览
@@ -92,7 +88,10 @@ export default function DashboardPage() {
               setAnalyzeResult(null);
               try {
                 const res = await fetch("/api/report/analyze", { method: "POST" });
-                if (res.status === 401) { setShowQR(true); return; }
+                if (res.status === 401) {
+                  setAnalyzeResult("Cookie 或 CSRF Token 已失效，请在 config.json 中手动更新");
+                  return;
+                }
                 const json = await res.json();
                 if (json.success) {
                   setAnalyzeResult(json.content);

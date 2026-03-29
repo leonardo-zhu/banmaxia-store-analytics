@@ -3,6 +3,7 @@ import path from "path";
 
 export interface AppConfig {
   cookie: string;
+  csrfToken: string;
   cookieUpdatedAt: string;
   port: number;
   storeName: string;
@@ -11,6 +12,7 @@ export interface AppConfig {
 
 const DEFAULT_CONFIG: AppConfig = {
   cookie: "",
+  csrfToken: "",
   cookieUpdatedAt: "",
   port: 4927,
   storeName: "斑马侠散酒铺",
