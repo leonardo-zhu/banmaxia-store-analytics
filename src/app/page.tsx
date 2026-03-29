@@ -12,6 +12,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -54,12 +56,38 @@ export default function DashboardPage() {
           今日数据概览
           {data && <span className="text-base font-normal text-gray-500 ml-2">{data.date}</span>}
         </h1>
-        <button
-          onClick={fetchData}
-          className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm"
-        >
-          刷新数据
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm"
+          >
+            刷新数据
+          </button>
+          <button
+            onClick={async () => {
+              setAnalyzing(true);
+              setAnalyzeResult(null);
+              try {
+                const res = await fetch("/api/report/analyze", { method: "POST" });
+                if (res.status === 401) { setShowQR(true); return; }
+                const json = await res.json();
+                if (json.success) {
+                  setAnalyzeResult(json.content);
+                } else {
+                  setAnalyzeResult(`分析失败: ${json.error}`);
+                }
+              } catch {
+                setAnalyzeResult("分析请求失败");
+              } finally {
+                setAnalyzing(false);
+              }
+            }}
+            disabled={analyzing}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-50"
+          >
+            {analyzing ? "分析中..." : "手动分析"}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -100,6 +128,13 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {analyzeResult && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">分析报告</h3>
+              <pre className="text-sm text-gray-800 whitespace-pre-wrap font-sans">{analyzeResult}</pre>
+            </div>
+          )}
         </div>
       )}
     </div>
