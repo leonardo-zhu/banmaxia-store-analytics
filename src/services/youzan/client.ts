@@ -23,13 +23,6 @@ export class YouzanClient {
     };
   }
 
-  private checkYouzanResponse<T>(json: YouzanResponse<T>): YouzanResponse<T> {
-    if (json.code !== 0) {
-      throw new Error(`YOUZAN_API_ERROR:${json.code}:${json.msg ?? "unknown"}`);
-    }
-    return json;
-  }
-
   async post<T>(path: string, body: object): Promise<YouzanResponse<T>> {
     const url = `${BASE_URL}${path}`;
     const res = await fetch(url, {
@@ -44,7 +37,7 @@ export class YouzanClient {
     if (!res.ok) {
       throw new Error(`Youzan API error: ${res.status} ${res.statusText}`);
     }
-    return this.checkYouzanResponse(await res.json());
+    return res.json();
   }
 
   async get<T>(path: string, params?: Record<string, string>): Promise<YouzanResponse<T>> {
@@ -63,7 +56,7 @@ export class YouzanClient {
     if (!res.ok) {
       throw new Error(`Youzan API error: ${res.status} ${res.statusText}`);
     }
-    return this.checkYouzanResponse(await res.json());
+    return res.json();
   }
 
   async checkCookieValid(): Promise<boolean> {

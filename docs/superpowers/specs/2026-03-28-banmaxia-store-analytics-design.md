@@ -186,9 +186,8 @@ src/
 | `NO_COOKIE` | `config.json` 中 `cookie` 字段为空 | Cookie 未配置 |
 | `NO_CSRF_TOKEN` | `config.json` 中 `csrfToken` 字段为空 | CSRF Token 未配置 |
 | `COOKIE_EXPIRED` | 有赞 API 返回 302 重定向 | 登录态已过期 |
-| `YOUZAN_API_ERROR:<code>:<msg>` | 有赞 API 返回 `code !== 0` | 认证失效或权限错误（有赞不一定用302，也可能返回200+错误码） |
 
-> **关键问题**：有赞在 CSRF Token 失效时往往不返回 302，而是返回 HTTP 200 + `{"code": 1, "data": null}`，客户端必须检测 `code !== 0` 并抛错，否则会静默返回全零数据。
+> **注意**：有赞 CRM 数据接口的 `code` 字段没有统一语义，**不能**用 `code !== 0` 来判断认证失败。只有 `/v2/dashboard/api/checkLocalLifeAbility.json` 才以 `code=0` 表示有效。若 CSRF Token 失效但仍返回 HTTP 200，数据字段可能为 null，前端会展示全零数据（当前已知限制，无法在不调用健康检查接口的情况下可靠区分）。
 
 #### 2. API 路由层 HTTP 响应
 

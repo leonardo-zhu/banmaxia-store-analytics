@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     if (message === "NO_CSRF_TOKEN") {
       return NextResponse.json({ error: "CSRF Token 未配置，请在 config.json 中填写" }, { status: 401 });
     }
-    if (message === "COOKIE_EXPIRED" || message.startsWith("YOUZAN_API_ERROR:")) {
+    if (message === "COOKIE_EXPIRED") {
       return NextResponse.json({ error: "登录已过期，请重新复制 Cookie 和 CSRF Token 到 config.json" }, { status: 401 });
     }
     return NextResponse.json({ error: message }, { status: 500 });
