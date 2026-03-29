@@ -50,7 +50,7 @@
 ### 数据源
 
 基域名：`https://crm.youzan.com`
-认证方式：Cookie（通过扫码登录获取）
+认证方式：Cookie + Csrf-Token（手动从浏览器登录后复制，保存到 `config.json`）
 请求体通用格式：
 
 ```json
@@ -69,12 +69,12 @@
 | 接口路径 | 方法 | 用途 |
 |---------|------|------|
 | `/crm/statcenter/income-analyse/api/getIncomeOverview` | POST | 收入概况（支付金额、客户数、订单数、客单价等） |
-| `/crm/statcenter/income-analyse/api/fetchCustomerPie` | POST | 客户类型收入占比（会员/非会员/流水客） |
+| `/crm/statcenter/income-analyse/api/fetchCustomerPie` | POST | 新老会员收入占比（新会员/老会员 — **注意：不是会员/非会员/流水客**，实际未使用） |
 | `/crm/statcenter/income-analyse/api/fetchMemberPie` | POST | 会员收入饼图 |
 | `/crm/statcenter/income-analyse/api/getIncomeTrend` | POST | 收入趋势 |
 | `/crm/statcenter/income-analyse/api/getAllChannelIncomeDetail` | POST | 全渠道收入明细 |
 | `/crm/statcenter/income-analyse/api/getMemberChannelIncomeDetail` | POST | 会员渠道收入明细 |
-| `/crm/statcenter/income-analyse/api/getMemberIncomeTree` | POST | 会员收入树（含同比数据） |
+| `/crm/statcenter/income-analyse/api/getMemberIncomeTree` | POST | 会员收入树（含同比数据）。**result 字段包含三个子模型：`memberIncomeIndexModel`（会员）、`notMemberIncomeIndexModel`（非会员）、`noneIncomeIndexModel`（流水客），是客户构成分布的真正数据来源。** |
 
 #### 拉新分析（4 个接口）
 
@@ -124,13 +124,14 @@
 src/
   services/
     youzan/
-      auth.ts           — Cookie 管理 + 扫码登录流程
-      client.ts         — HTTP 客户端（自动带 Cookie、错误处理）
+      auth.ts           — Cookie 有效性检查（读取 config.json 中的 cookie + csrfToken 并验证）
+      client.ts         — HTTP 客户端（自动带 Cookie 和 Csrf-Token 请求头）
       types.ts          — 有赞 API 响应类型定义
       apis/
         income.ts       — 收入分析
         acquisition.ts  — 拉新分析
         repurchase.ts   — 复购分析
+        aggregator.ts   — 数据聚合器（合并多个接口结果为 DailyReport）
         rfm.ts          — RFM 分析
         persona.ts      — 客户画像
         member.ts       — 新老会员分析
@@ -138,29 +139,20 @@ src/
 
 ## 模块二：Cookie 生命周期管理
 
-### 扫码登录流程
+### 认证方式（手动配置）
 
-有赞使用二维码扫码登录，流程如下：
+> ⚠️ 扫码登录功能已移除。
+> 原因：有赞登录页面每次加载时会生成新的 CSRF Token，自动化扫码登录无法可靠获取该 Token，导致认证失败。
 
-1. **获取 Token**：`GET /api/login/qrcode-data.json?csrf_token=...`
-   - 返回 `{ "data": { "token": "YZ..." } }`
-   - 二维码内容：`http://passport.youzan.com/scan-login?token=YZ...&fromSource=SOURCE_PC`
-
-2. **轮询扫码状态**：`POST /api/login/check-qrcode-is-login.json`
-   - 请求体：`token=YZ...&csrf_token=...`
-   - 未扫码：`{ "code": 160210086, "msg": "pc端未扫码" }`
-   - 扫码成功：返回登录态 + Set-Cookie
-
-3. **提取 Cookie**：从响应头 `Set-Cookie` 中提取并持久化
+现在改为**手动配置**：用户在浏览器中登录有赞后，从浏览器开发者工具中复制 Cookie 和 CSRF Token，填入 `config.json`。
 
 ### 系统行为
 
-- **启动时**：从 `config.json` 读取 Cookie
-- **每次请求前**：用轻量接口验证 Cookie 有效性
-- **Cookie 失效时**：
-  - Web 仪表盘显示二维码弹窗
-  - 通过已有渠道（如果可用）推送通知：「Cookie 已过期，请打开仪表盘扫码」
-- **扫码成功后**：自动更新 `config.json`，恢复数据拉取
+- **启动时**：从 `config.json` 读取 `cookie` 和 `csrfToken`
+- **每次请求时**：将两者作为 HTTP 请求头发送
+  - `Cookie: <cookie>`
+  - `Csrf-Token: <csrfToken>`
+- **Cookie 失效时**：仪表盘显示文字提示，提示用户手动更新 `config.json`
 
 ### Cookie 有效性检查
 
@@ -169,20 +161,13 @@ src/
 - 返回 200 且 `code === 0` 表示有效
 - 返回 302 重定向到 `account.youzan.com/login` 表示失效
 
-### 扫码登录域名
-
-注意：扫码登录相关接口在 `account.youzan.com` 域名下，但**二维码跳转地址**在 `passport.youzan.com`：
-- 获取 Token：`https://account.youzan.com/api/login/qrcode-data.json`
-- 轮询状态：`https://account.youzan.com/api/login/check-qrcode-is-login.json`
-- 二维码内容：`http://passport.youzan.com/scan-login?token={token}&fromSource=SOURCE_PC`
-- csrf_token 需从登录页面获取
-
 ### 配置文件
 
 ```json
 // config.json
 {
-  "cookie": "登录后的完整 Cookie 字符串",
+  "cookie": "登录后的完整 Cookie 字符串（从浏览器 DevTools 复制）",
+  "csrfToken": "有赞 Csrf-Token 值（从请求头中复制）",
   "cookieUpdatedAt": "2026-03-28T22:00:00+08:00",
   "port": 4927,
   "storeName": "斑马侠散酒铺",
@@ -198,9 +183,9 @@ src/
 |------|------|------|
 | `/api/report/daily?date=2026-03-27` | GET | 获取指定日期的结构化数据汇总 |
 | `/api/report/compare?date=2026-03-27` | GET | 获取带日环比、周同比、月同比的对比数据 |
+| `/api/report/analyze` | POST | 触发 Claude Code 手动分析（流式 SSE 响应） |
+| `/api/report/analyze/openclaw` | POST | 触发 OpenClaw 分析（流式 SSE → 收集全文后返回 JSON） |
 | `/api/auth/status` | GET | Cookie 有效性检查 |
-| `/api/auth/qrcode` | POST | 触发扫码登录，返回二维码 token |
-| `/api/auth/qrcode/poll` | GET | 轮询扫码状态 |
 | `/api/reports` | GET | 历史报告列表 |
 | `/api/reports` | POST | 保存 AI 生成的分析报告 |
 | `/api/reports/:id` | GET | 获取单份报告详情 |
@@ -298,32 +283,22 @@ src/
 │  │  新增会员数    │  │  (点击查看详情)      │ │
 │  └──────────────┘  └──────────────────────┘ │
 │                                             │
-│  ┌──────────────────────────────────────┐   │
-│  │  [手动分析] 按钮 — 立即触发 AI 分析   │   │
-│  └──────────────────────────────────────┘   │
+│  ┌───────────────┐  ┌───────────────────┐  │
+│  │  [手动分析]    │  │  [OpenClaw 分析]  │  │
+│  │  (Claude)     │  │  (绿色按钮)       │  │
+│  └───────────────┘  └───────────────────┘  │
 └─────────────────────────────────────────────┘
 ```
 
-### Cookie 失效弹窗
+### Cookie 失效提示
 
-当检测到 Cookie 失效时，全屏弹出扫码界面：
+当检测到 Cookie 失效时，仪表盘显示文字提示（不再弹出二维码）：
 
 ```
-┌─────────────────────────────────────┐
-│                                     │
-│       登录已过期，请扫码更新         │
-│                                     │
-│          ┌───────────┐              │
-│          │           │              │
-│          │  QR Code  │              │
-│          │           │              │
-│          └───────────┘              │
-│                                     │
-│     请使用微信扫描二维码              │
-│     扫码成功后将自动恢复            │
-│                                     │
-└─────────────────────────────────────┘
+登录已过期，请手动更新 config.json 中的 cookie 和 csrfToken
 ```
+
+> 扫码登录弹窗（`QRCodeModal`）已移除。
 
 ## 模块五：Agent Skill
 
@@ -423,46 +398,56 @@ banmaxia-store-analytics/
 ├── src/
 │   ├── app/                        — Next.js App Router
 │   │   ├── page.tsx                — 首页 Dashboard
-│   │   ├── history/page.tsx        — 历史数据
+│   │   ├── history/page.tsx        — 历史数据（默认日期：昨天）
 │   │   ├── reports/page.tsx        — 报告列表
 │   │   ├── reports/[id]/page.tsx   — 报告详情
 │   │   ├── settings/page.tsx       — 设置页
 │   │   └── api/
 │   │       ├── report/
 │   │       │   ├── daily/route.ts
-│   │       │   └── compare/route.ts
+│   │       │   ├── compare/route.ts
+│   │       │   └── analyze/
+│   │       │       ├── route.ts            — Claude 手动分析
+│   │       │       └── openclaw/route.ts   — OpenClaw 分析
 │   │       ├── auth/
-│   │       │   ├── status/route.ts
-│   │       │   ├── qrcode/route.ts
-│   │       │   └── qrcode/poll/route.ts
+│   │       │   └── status/route.ts
 │   │       └── reports/
 │   │           ├── route.ts
 │   │           └── [id]/route.ts
 │   ├── components/                 — React 组件
-│   │   ├── Dashboard/
-│   │   ├── Charts/
-│   │   ├── QRCodeModal/
-│   │   └── ReportViewer/
+│   │   ├── StatCard.tsx
+│   │   ├── StatsGrid.tsx
+│   │   ├── CustomerPieChart.tsx    — 会员/非会员/流水客饼图
+│   │   ├── IncomeTrendChart.tsx    — 近 7 日收入趋势折线图
+│   │   ├── ReportCard.tsx
+│   │   ├── Navbar.tsx
+│   │   └── DatePicker.tsx
 │   ├── services/
 │   │   └── youzan/
-│   │       ├── auth.ts
-│   │       ├── client.ts
+│   │       ├── auth.ts             — Cookie 有效性检查
+│   │       ├── client.ts           — HTTP 客户端（Cookie + Csrf-Token）
 │   │       ├── types.ts
 │   │       └── apis/
 │   │           ├── income.ts
 │   │           ├── acquisition.ts
 │   │           ├── repurchase.ts
+│   │           ├── aggregator.ts   — 数据聚合（fetchDailyReport、fetchCompareReport）
 │   │           ├── rfm.ts
 │   │           ├── persona.ts
 │   │           └── member.ts
 │   └── lib/
-│       ├── config.ts               — 配置管理
-│       └── reports.ts              — 报告读写
-├── reports/                        — AI 分析报告存储
-├── config.json                     — 运行时配置
+│       ├── config.ts               — 配置管理（AppConfig 含 csrfToken 字段）
+│       ├── reports.ts              — 报告读写
+│       └── date-utils.ts           — 日期工具
+├── __tests__/                      — 单元测试（19 个）
+├── reports/                        — AI 分析报告存储（gitignored）
+├── config.json                     — 运行时配置（gitignored）
+├── config.example.json             — 配置示例（已提交）
+├── ecosystem.config.js             — PM2 配置（fork 模式）
+├── .env.local                      — 本地环境变量（gitignored）
 ├── package.json
 ├── tsconfig.json
-├── next.config.js
+├── next.config.ts
 └── README.md
 ```
 
@@ -471,17 +456,26 @@ banmaxia-store-analytics/
 ### 启动方式
 
 ```bash
-# 开发
-npm run dev -- -p 4927
+# 开发（需先在 .env.local 配置 OPENCLAW_GATEWAY_TOKEN）
+pnpm dev
 
 # 生产
-npm run build && pm2 start npm --name "banmaxia-store-analytics" -- start -- -p 4927
+pnpm build
+pm2 start ecosystem.config.js
 ```
 
 ### 进程管理
 
-- 使用 PM2 管理进程，支持崩溃自动重启和开机自启
+- 使用 PM2 + `ecosystem.config.js` 管理进程（**fork 模式**，cluster 模式与 Next.js CLI 不兼容）
+- 自动重启，最多 10 次，间隔 5 秒
+- `OPENCLAW_GATEWAY_TOKEN` 通过 ecosystem.config.js 的 env 块传入
 - 后续服务增多时迁移到 Docker Compose
+
+### 环境变量
+
+| 变量 | 位置 | 说明 |
+|------|------|------|
+| `OPENCLAW_GATEWAY_TOKEN` | `.env.local`（开发）/ `ecosystem.config.js` env（生产） | OpenClaw 网关 Token |
 
 ### 未来扩展
 

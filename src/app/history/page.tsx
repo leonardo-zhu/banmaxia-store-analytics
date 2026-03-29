@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import DatePicker from "@/components/DatePicker";
 import StatsGrid from "@/components/StatsGrid";
 import CustomerPieChart from "@/components/CustomerPieChart";
@@ -10,7 +10,7 @@ import { formatDate, getYesterday } from "@/lib/date-utils";
 export default function HistoryPage() {
   const [date, setDate] = useState(getYesterday(formatDate(new Date())));
   const [data, setData] = useState<CompareReport | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async (d: string) => {
     setLoading(true);
@@ -24,9 +24,12 @@ export default function HistoryPage() {
     }
   }, []);
 
+  useEffect(() => {
+    fetchData(date);
+  }, [date, fetchData]);
+
   const handleDateChange = (d: string) => {
     setDate(d);
-    fetchData(d);
   };
 
   return (

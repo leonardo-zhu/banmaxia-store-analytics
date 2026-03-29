@@ -6,7 +6,49 @@
 
 **Architecture:** Next.js App Router with server-side data services. Youzan HTTP client wraps 24 CRM API endpoints with automatic cookie management. API routes expose aggregated data for Claude Code and OpenClaw agents. File-based report storage. Agent Skill document enables cross-agent data access.
 
-**Tech Stack:** Next.js 15, React 19, TypeScript, Tailwind CSS, Recharts (charts), qrcode (QR generation)
+**Tech Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS, Recharts (charts)
+
+---
+
+## ✅ 执行状态总结（截至 2026-03-29）
+
+**所有核心任务已完成。** 以下为实际执行中的架构变更与 Bug 修复记录。
+
+### 已完成任务
+
+- ✅ Task 1: Project Scaffolding（Next.js 16.2.1 + Tailwind + Jest + pnpm）
+- ✅ Task 2: Config and Date Utils（`AppConfig` 含 `csrfToken` 字段）
+- ✅ Task 3: Youzan HTTP Client（含 `Cookie` + `Csrf-Token` 双请求头）
+- ✅ Task 4: Youzan API Modules（income / acquisition / repurchase / rfm / persona / member）
+- ✅ Task 5: Data Aggregator（`fetchDailyReport` + `fetchCompareReport`，含近 7 日趋势）
+- ✅ Task 6: API Routes（daily / compare / analyze / analyze/openclaw / auth/status / reports）
+- ✅ Task 7: Web Dashboard（StatCard / StatsGrid / CustomerPieChart / IncomeTrendChart / ReportCard）
+- ✅ Task 8: Agent Skill（v2.0，含完整 API 结构注释和分析指引）
+- ✅ Task 9: PM2 Config（`ecosystem.config.js`，fork 模式）
+- ✅ Task 10: OpenClaw Integration（`/api/report/analyze/openclaw`，SSE 流式转 JSON）
+- ✅ README 文档更新
+
+### 架构变更（偏离原设计）
+
+| 原设计 | 实际实现 | 原因 |
+|--------|---------|------|
+| 扫码登录（自动获取 Cookie） | 手动配置 cookie + csrfToken | 有赞每页生成新 CSRF Token，自动化不可靠 |
+| `QRCodeModal` 组件 | 移除，改为文字提示 | 扫码登录废弃 |
+| Cookie 失效时弹窗 | Cookie 失效时仪表盘显示文字提示 | 同上 |
+| `qrcode` 依赖 | 未安装 | 扫码登录废弃 |
+| `auth/qrcode/route.ts` + `auth/qrcode/poll/route.ts` | 不存在 | 扫码登录废弃 |
+| `npm run dev` | `pnpm dev` | 全局 pnpm 规范 |
+| PM2 直接调用 `npm` | `ecosystem.config.js` + fork 模式 | cluster 模式与 Next.js CLI 不兼容 |
+
+### Bug 修复记录
+
+| Bug | 根本原因 | 修复 |
+|-----|---------|------|
+| `payCustomerCount` 始终为 0 | Youzan 返回 `payUvOfPeriod: 0`（时段专属，恒为 0），实际值在 `payUv` | `num(model.payUvOfPeriod)` → `num(model.payUv)` |
+| `CustomerPieChart` 始终为空 | `fetchCustomerPie` 返回的是**新老会员**分布，非会员/非会员/流水客分布，且结构为 `{result: {noneIncomeIndicatorModel, oldIncomeIndicatorModel, newIncomeIndicatorModel}}`，与预期完全不同 | 改从 `getMemberIncomeTree` 结果读取：`memberIncomeIndexModel`（会员）、`notMemberIncomeIndexModel`（非会员）、`noneIncomeIndexModel`（流水客） |
+| 历史页默认日期为今天（无数据） | `useState(formatDate(new Date()))` | 改为 `useState(getYesterday(formatDate(new Date())))` |
+
+---
 
 ---
 
